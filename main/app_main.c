@@ -3,12 +3,15 @@
 #include "freertos/task.h"
 #include "driver/uart.h"
 #include "driver/gpio.h"
+#include "esp_log.h"
 #include "app_main.h"
+#include "uart_read.h"
 
 #define RXD2 18
 #define TXD2 17
 #define GPS_BAUD 9600
 #define BUF_SIZE 1024
+//#define GPS_POWER_PIN GPIO_NUM_4 // Vaihda oikeaksi pinni
 
 static const char* MAIN_TAG = "Main";
 
@@ -30,9 +33,16 @@ void app_main() {
     // Set the UART pins
     uart_set_pin(UART_NUM_1, TXD2, RXD2, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
 
-    printf("UART initialised\n");
+    ESP_LOGI(MAIN_TAG, "UART initialised\n");
+
+    
+/*
+    gpio_pad_select_gpio(GPS_POWER_PIN);
+    gpio_set_direction(GPS_POWER_PIN, GPIO_MODE_OUTPUT);
+    gpio_set_level(GPS_POWER_PIN, 1); // Kytke virta päälle
+*/
 
     // Create the UART task
-    xTaskCreate(uart_task, "uart_task", 2048, NULL, 10, NULL);
+    xTaskCreate(uart_task, "uart_task", 4096, NULL, 10, NULL);
 }
 
