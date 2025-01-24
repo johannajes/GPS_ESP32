@@ -41,17 +41,14 @@ accessible from devices on the same network.
 ### ESP32 Firmware
 1. Clone this repository.
 2. Connect the NEO-6M GPS module to the ESP32-S3:
-   - **GPS TX** to **ESP32 RXD2 (GPIO 18)**
-   - **GPS RX** to **ESP32 TXD2 (GPIO 17)**
+   - **GPS TX** to **ESP32S3 RXD2 (GPIO 18)**
+   - **GPS RX** to **ESP32S3 TXD2 (GPIO 17)**
    - **VCC** and **GND** to power and ground pins on the ESP32.
 3. Open the project in Visual Studio Code.
 4. Configure your Wi-Fi credentials and static IP in the `wifi_init_sta` function of `main.c`:
    ```c
    #define WIFI_SSID "your_wifi_name"
    #define WIFI_PASS "your_wifi_password"
-   ip4addr_aton("192.168.1.100", &ip_info.ip);
-   ip4addr_aton("192.168.1.1", &ip_info.gw);
-   ip4addr_aton("255.255.255.0", &ip_info.netmask);
    ```
 5. Build and flash the firmware:
    ```bash
@@ -108,13 +105,6 @@ accessible from devices on the same network.
 - `react-leaflet`
 - `axios`
 - `leaflet`
-
----
-
-## Future Enhancements
-- Add WebSocket support for real-time updates.
-- Implement error handling for GPS signal loss.
-- Enhance the frontend with additional map features.
 
 ---
 
