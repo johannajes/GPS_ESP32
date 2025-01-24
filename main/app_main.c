@@ -26,19 +26,15 @@ void app_main() {
         .stop_bits = UART_STOP_BITS_1,
         .flow_ctrl = UART_HW_FLOWCTRL_DISABLE
     };
+    // Connect WiFi
+    connect_wifi();
 
     // Install and configure UART driver
     uart_driver_install(UART_NUM_1, BUF_SIZE * 2, 0, 0, NULL, 0);
     uart_param_config(UART_NUM_1, &uart_config);
-
     // Set the UART pins
     uart_set_pin(UART_NUM_1, TXD2, RXD2, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
-
     ESP_LOGI(MAIN_TAG, "UART initialised\n");
-
-    connect_wifi();
-
-
     // Create the UART task
     xTaskCreate(uart_task, "uart_task", 4096, NULL, 10, NULL);
 }
