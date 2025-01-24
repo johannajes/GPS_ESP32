@@ -45,7 +45,7 @@ accessible from devices on the same network.
    - **GPS RX** to **ESP32S3 TXD2 (GPIO 17)**
    - **VCC** and **GND** to power and ground pins on the ESP32.
 3. Open the project in Visual Studio Code.
-4. Configure your Wi-Fi credentials and static IP in the `wifi_init_sta` function of `main.c`:
+4. Configure your Wi-Fi credentials and static IP in the `wifi_init_sta` function of `http_server.c`:
    ```c
    #define WIFI_SSID "your_wifi_name"
    #define WIFI_PASS "your_wifi_password"
@@ -84,7 +84,7 @@ accessible from devices on the same network.
 ### ESP32 Firmware
 - **`main/main.c`**: Contains the main application logic.
 - **`main/uart_read.c`**: Handles UART communication with the GPS module.
-- **`main/wifi.c`**: Manages Wi-Fi connection and HTTP server.
+- **`main/http_server.c`**: Manages Wi-Fi connection and HTTP server.
 
 ### React Frontend
 - **`react-map/src/App.js`**: Main component that fetches GPS data and renders the map.
