@@ -7,6 +7,10 @@ The ESP32 acts as a Wi-Fi-enabled server that shares GPS data in JSON format.
 A React-based frontend using the Leaflet library visualizes the GPS location on a map, 
 accessible from devices on the same network.
 
+### `The project is divided into two repositories:`
+[ESP32 code](https://github.com/johannajes/GPS_ESP32).
+[Map server code](https://github.com/johannajes/Map_Server).
+
 ---
 
 ## Features
