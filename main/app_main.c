@@ -27,6 +27,9 @@ void app_main() {
         .flow_ctrl = UART_HW_FLOWCTRL_DISABLE
     };
 
+    // Connect Wi-Fi
+    wifi_init_sta();
+
     // Install and configure UART driver
     uart_driver_install(UART_NUM_1, BUF_SIZE * 2, 0, 0, NULL, 0);
     uart_param_config(UART_NUM_1, &uart_config);

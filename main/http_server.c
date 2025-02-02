@@ -56,26 +56,20 @@ esp_err_t gps_post_handler(httpd_req_t *req) {
     return ESP_FAIL;
 }
 
-// HTTP-palvelimen käynnistys
-void start_http_server() {
-    httpd_config_t config = HTTPD_DEFAULT_CONFIG();
-    httpd_handle_t server = NULL;
-
-    if (httpd_start(&server, &config) == ESP_OK) {
-        httpd_uri_t gps_data_uri = {
-            .uri = "/gps", .method = HTTP_GET, .handler = gps_data_handler, .user_ctx = NULL
-        };
-        httpd_uri_t gps_post_uri = {
-            .uri = "/gps", .method = HTTP_POST, .handler = gps_post_handler, .user_ctx = NULL
-        };
-        httpd_register_uri_handler(server, &gps_data_uri);
-        httpd_register_uri_handler(server, &gps_post_uri);
-    }
-}
-
 // WiFi-yhteyden alustaminen
-void wifi_init_sta(void) {
-    ESP_LOGI(HTTP_TAG, "Initializing Wi-Fi in STA mode...");
+void wifi_init_sta() {
+    // Alusta NVS ennen WiFi:n käyttöä
+    esp_err_t ret = nvs_flash_init();
+    if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+        ESP_ERROR_CHECK(nvs_flash_erase());  // Poistaa vanhat NVS-tiedot, jos ne ovat korruptoituneet
+        ret = nvs_flash_init();
+    }
+    ESP_ERROR_CHECK(ret);
+
+    ESP_LOGI(HTTP_TAG, "Initializing Wi-Fi...");
+    esp_netif_init();
+    esp_event_loop_create_default();
+    esp_netif_create_default_wifi_sta();
 
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_wifi_init(&cfg));
@@ -91,5 +85,65 @@ void wifi_init_sta(void) {
     ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config));
     ESP_ERROR_CHECK(esp_wifi_start());
 
-    ESP_LOGI(HTTP_TAG, "Wi-Fi initialized");
+    ESP_LOGI(HTTP_TAG, "Connecting to Wi-Fi...");
+
+    
+    // Tarkistetaan WiFi-yhteyden tila ennen IP-osoitteen hakua
+    wifi_ap_record_t ap_info;
+    while (esp_wifi_connect() != ESP_OK) {
+        ESP_LOGE(HTTP_TAG, "Failed to connect, retrying...");
+        vTaskDelay(pdMS_TO_TICKS(2000));
+    }
+    ESP_LOGI(HTTP_TAG, "Connected to Wi-Fi!");
+
+    // Odotetaan, kunnes ESP32 saa IP-osoitteen
+    esp_netif_ip_info_t ip_info;
+    esp_netif_t *netif = esp_netif_get_handle_from_ifkey("WIFI_STA_DEF");
+
+    int retry_count = 0;
+    while (retry_count < 10) {
+        if (esp_netif_get_ip_info(netif, &ip_info) == ESP_OK && ip_info.ip.addr != 0) {
+            break; // IP-osoite saatu!
+        }
+        ESP_LOGW(HTTP_TAG, "Waiting for IP address... (%d)", retry_count + 1);
+        vTaskDelay(pdMS_TO_TICKS(2000)); // Odotetaan 2 sekuntia
+        retry_count++;
+    }
+
+    if (ip_info.ip.addr == 0) {
+        ESP_LOGE(HTTP_TAG, "Failed to get IP address!");
+    } else {
+        ESP_LOGI(HTTP_TAG, "ESP32 IP Address: " IPSTR, IP2STR(&ip_info.ip));
+    }
 }
+
+static bool http_server_started = false;
+// HTTP-palvelimen käynnistys
+void start_http_server() {
+    if (http_server_started) {
+        ESP_LOGW(HTTP_TAG, "Server already running, skipping...");
+        return;
+    }
+
+    ESP_LOGI(HTTP_TAG, "Starting HTTP server...");
+    http_server_started = true;
+    httpd_config_t config = HTTPD_DEFAULT_CONFIG();
+    config.server_port = 80;
+    httpd_handle_t server = NULL;
+
+    if (httpd_start(&server, &config) == ESP_OK) {
+        httpd_uri_t gps_data_uri = {
+            .uri = "/gps", .method = HTTP_GET, .handler = gps_data_handler, .user_ctx = NULL
+        };
+        httpd_uri_t gps_post_uri = {
+            .uri = "/gps", .method = HTTP_POST, .handler = gps_post_handler, .user_ctx = NULL
+        };
+        httpd_register_uri_handler(server, &gps_data_uri);
+        httpd_register_uri_handler(server, &gps_post_uri);
+    }
+    while (1) {
+        vTaskDelay(pdMS_TO_TICKS(1000)); // Pidetään tehtävä elossa
+    }
+}
+
+
