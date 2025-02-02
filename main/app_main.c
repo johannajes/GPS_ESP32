@@ -40,7 +40,7 @@ void app_main() {
     // Create the UART task
     xTaskCreate(uart_task, "uart_task", 4096, NULL, 10, NULL);
 
-    // Connect WiFi and start HTTP-server
+    // Start HTTP-server
     xTaskCreate(start_http_server, "start_http_server", 4096, NULL, 5, NULL);
 }
 

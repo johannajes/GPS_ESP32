@@ -64,7 +64,7 @@ void uart_task(void *arg) {
                     parse_gpgga(gpgga_start, &latitude, &longitude);
                     ESP_LOGI(UART_TAG, "Parsed Latitude: %.6f, Longitude: %.6f", latitude, longitude);
 
-                    // Päivitä GPS-koordinaatit HTTP-palvelimelle
+                    // Update GPS coordinates to the HTTP server
                     update_gps_data(latitude, longitude);
                 }
             }
