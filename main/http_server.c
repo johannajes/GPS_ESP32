@@ -12,8 +12,8 @@
 #define HTTP_TAG "HTTP"
 
 // Global variables for storing GPS data
-static float latitude = 0.0;
-static float longitude = 0.0;
+static float latitude = 60.1700;
+static float longitude = 24.9390;
 
 
 // Update GPS data from UART
@@ -23,11 +23,24 @@ void update_gps_data(float new_lat, float new_lon) {
     ESP_LOGI(HTTP_TAG, "Updated GPS: Lat: %.6f, Lon: %.6f", latitude, longitude);
 }
 
+esp_err_t cors_options_handler(httpd_req_t *req) {
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "*");
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Headers", "Content-Type");
+    httpd_resp_send(req, "", 0);  // OPTIONS request does not require content
+    return ESP_OK;
+}
+
 // GET: Returns GPS coordinates in JSON format
 esp_err_t gps_data_handler(httpd_req_t *req) {
     char json_response[128];
     snprintf(json_response, sizeof(json_response),
              "{\"latitude\": %.6f, \"longitude\": %.6f}", latitude, longitude);
+
+    // Add CORS headers to allow cross-origin requests (React)
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "*");
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Headers", "Content-Type");
 
     httpd_resp_set_type(req, "application/json");
     httpd_resp_send(req, json_response, strlen(json_response));
@@ -132,12 +145,19 @@ void start_http_server() {
     httpd_handle_t server = NULL;
 
     if (httpd_start(&server, &config) == ESP_OK) {
+        httpd_uri_t options_uri = {
+            .uri = "/*",  // Includes all routes
+            .method = HTTP_OPTIONS,
+            .handler = cors_options_handler,
+            .user_ctx = NULL
+        };
         httpd_uri_t gps_data_uri = {
             .uri = "/gps", .method = HTTP_GET, .handler = gps_data_handler, .user_ctx = NULL
         };
         httpd_uri_t gps_post_uri = {
             .uri = "/gps", .method = HTTP_POST, .handler = gps_post_handler, .user_ctx = NULL
         };
+        httpd_register_uri_handler(server, &options_uri);
         httpd_register_uri_handler(server, &gps_data_uri);
         httpd_register_uri_handler(server, &gps_post_uri);
     }
