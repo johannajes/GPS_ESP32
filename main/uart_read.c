@@ -48,6 +48,13 @@ void uart_task(void *arg) {
 
     while (1) {
         int len = uart_read_bytes(UART_NUM_1, data, BUF_SIZE - 1, 100 / portTICK_PERIOD_MS);
+        // Use this part to test if Neo-6m uart connection is working
+        ESP_LOGI(UART_TAG, "Raw UART data (hex):");
+        for (int i = 0; i < len; i++) {
+            printf("%02X ", data[i]);  // Print hex-code
+        }
+        printf("\n");
+        //
         if (len > 0) {
             data[len] = '\0'; // Null-terminate
             ESP_LOGI(UART_TAG, "Received: %s", (char *)data);
