@@ -5,11 +5,8 @@
 #include "driver/uart.h"
 #include "esp_log.h"
 #include "http_server.h"
+#include "uart_read.h"
 
-#define RXD2 18
-#define TXD2 17
-#define GPS_BAUD 9600
-#define BUF_SIZE 1024
 
 static const char *UART_TAG = "UART";
 

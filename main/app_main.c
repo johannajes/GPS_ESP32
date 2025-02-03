@@ -8,11 +8,6 @@
 #include "uart_read.h"
 #include "http_server.h"
 
-#define RXD2 18
-#define TXD2 17
-#define GPS_BAUD 9600
-#define BUF_SIZE 1024
-
 
 static const char* MAIN_TAG = "Main";
 
