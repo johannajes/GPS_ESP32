@@ -24,6 +24,7 @@ void app_main() {
 
     // Connect Wi-Fi
     wifi_init_sta();
+    start_wifi_monitor(); 
 
     // Install and configure UART driver
     uart_driver_install(UART_NUM_1, BUF_SIZE * 2, 0, 0, NULL, 0);

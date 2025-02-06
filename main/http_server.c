@@ -22,19 +22,18 @@ static int coord_count = 0;
 
 // Update GPS data from UART
 void update_gps_data(float new_lat, float new_lon) {
-    if (coord_count < MAX_COORDINATES) {
-        latitude[coord_count] = new_lat;
-        longitude[coord_count] = new_lon;
-        coord_count++;
-    } else {
-        // 🔹 Siirretään vanhat koordinaatit ja lisätään uudet loppuun
+    if (coord_count >= MAX_COORDINATES) {
+        // Move all elements one step back, removing the oldest entry
         for (int i = 1; i < MAX_COORDINATES; i++) {
             latitude[i - 1] = latitude[i];
             longitude[i - 1] = longitude[i];
         }
-        latitude[MAX_COORDINATES - 1] = new_lat;
-        longitude[MAX_COORDINATES - 1] = new_lon;
+        coord_count--;  // Prevent buffer overflow
     }
+
+    latitude[coord_count] = new_lat;
+    longitude[coord_count] = new_lon;
+    coord_count++;
 
     ESP_LOGI(HTTP_TAG, "Added GPS: Lat: %.6f, Lon: %.6f (Total: %d)", new_lat, new_lon, coord_count);
 }
@@ -49,7 +48,8 @@ esp_err_t cors_options_handler(httpd_req_t *req) {
 
 // GET: Returns GPS coordinates in JSON format
 esp_err_t gps_data_handler(httpd_req_t *req) {
-    char *json_response = (char *)malloc(2048);   // Allocate memory for Buffer
+    int buffer_size = 64 * coord_count + 16;  // Dynamic buffer size
+    char *json_response = (char *)malloc(buffer_size);
     if (json_response == NULL) {
         ESP_LOGE(HTTP_TAG, "Memory allocation failed!");
         httpd_resp_send_500(req);
@@ -57,15 +57,14 @@ esp_err_t gps_data_handler(httpd_req_t *req) {
     }
 
     char temp[64];
-    strcpy(json_response, "[");  // Make a JSON-table
+    strcpy(json_response, "[");  // Make a JSON array
 
     for (int i = 0; i < coord_count; i++) {
         snprintf(temp, sizeof(temp), "{\"latitude\": %.6f, \"longitude\": %.6f}", latitude[i], longitude[i]);
         strcat(json_response, temp);
         if (i < coord_count - 1) strcat(json_response, ",");  // Add comma for all except the last row
     }
-
-    strcat(json_response, "]");  // End JSON-table
+    strcat(json_response, "]");  // End JSON array
 
     ESP_LOGI(HTTP_TAG, "Sending %d GPS coordinates", coord_count);
 
@@ -76,7 +75,7 @@ esp_err_t gps_data_handler(httpd_req_t *req) {
 
     httpd_resp_set_type(req, "application/json");
     httpd_resp_send(req, json_response, strlen(json_response));
-    
+
     free(json_response); // Free allocated memory
     return ESP_OK;
 }
@@ -128,6 +127,7 @@ void wifi_init_sta() {
         },
     };
 
+    ESP_ERROR_CHECK(esp_wifi_set_ps(WIFI_PS_NONE));  // No power saving mode
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
     ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config));
     ESP_ERROR_CHECK(esp_wifi_start());
@@ -162,6 +162,22 @@ void wifi_init_sta() {
     } else {
         ESP_LOGI(HTTP_TAG, "ESP32 IP Address: " IPSTR, IP2STR(&ip_info.ip));
     }
+}
+
+void check_wifi_connection(void *pvParameters) {
+    while (1) {
+        wifi_ap_record_t ap_info;
+        if (esp_wifi_sta_get_ap_info(&ap_info) != ESP_OK) {
+            ESP_LOGW(HTTP_TAG, "WiFi disconnected! Reconnecting...");
+            esp_wifi_connect();
+        }
+        vTaskDelay(pdMS_TO_TICKS(5000)); // Tarkista WiFi-yhteys 5 sekunnin välein
+    }
+}
+
+// restart WiFi connection if disconnected
+void start_wifi_monitor() {
+    xTaskCreate(check_wifi_connection, "wifi_monitor", 3072, NULL, 5, NULL);
 }
 
 static bool http_server_started = false;
