@@ -9,7 +9,7 @@ accessible from devices on the same network.
 
 ### `The project is divided into two repositories:`
 [ESP32 code](https://github.com/johannajes/GPS_ESP32).
-[Map server code](https://github.com/johannajes/Map_Server).
+[Map server code](https://github.com/johannajes/Map_App).
 
 ---
 
@@ -44,12 +44,12 @@ accessible from devices on the same network.
 
 ### ESP32 Firmware
 1. Clone this repository.
-2. Connect the NEO-6M GPS module to the ESP32-S3:
-   - **GPS TX** to **ESP32S3 RXD2 (GPIO 18)**
-   - **GPS RX** to **ESP32S3 TXD2 (GPIO 17)**
-   - **VCC** and **GND** to power and ground pins on the ESP32.
+2. Connect the NEO-6M GPS module to the ESP32-S3 or ESP32:
+   - **GPS TX** to **ESP32S3 RXD2 (GPIO 18)** OR **ESP32 RX2 (GPIO 16)**
+   - **GPS RX** to **ESP32S3 TXD2 (GPIO 17)** OR **ESP32 TX2 (GPIO 17)**
+   - **VCC** and **GND** to power and ground pins on the ESP32-S3 or ESP32.
 3. Open the project in Visual Studio Code.
-4. Configure your Wi-Fi credentials and static IP in the `wifi_init_sta` function of `http_server.c`:
+4. Configure your Wi-Fi credentials and static IP in the `wifi_config.h`:
    ```c
    #define WIFI_SSID "your_wifi_name"
    #define WIFI_PASS "your_wifi_password"
