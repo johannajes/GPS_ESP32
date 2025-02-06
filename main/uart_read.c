@@ -4,6 +4,7 @@
 #include "freertos/task.h"
 #include "driver/uart.h"
 #include "esp_log.h"
+#include <stdlib.h>
 #include "http_server.h"
 #include "uart_read.h"
 
@@ -43,17 +44,20 @@ void parse_gpgga(const char *nmea_sentence, float *latitude, float *longitude) {
     *longitude = ((int)(lon / 100) + (lon - ((int)(lon / 100) * 100)) / 60.0) * (lon_dir == 'W' ? -1 : 1);
 }
 
+// Main task for uart
 void uart_task(void *arg) {
     static uint8_t data[BUF_SIZE];
 
     while (1) {
         int len = uart_read_bytes(UART_NUM_1, data, BUF_SIZE - 1, 100 / portTICK_PERIOD_MS);
         // Use this part to test if Neo-6m uart connection is working
-        ESP_LOGI(UART_TAG, "Raw UART data (hex):");
-        for (int i = 0; i < len; i++) {
-            printf("%02X ", data[i]);  // Print hex-code
-        }
-        printf("\n");
+
+        //ESP_LOGI(UART_TAG, "Raw UART data (hex):");
+        //for (int i = 0; i < len; i++) {
+        //    printf("%02X ", data[i]);  // Print hex-code
+        //}
+        //printf("\n");
+
         //
         if (len > 0) {
             data[len] = '\0'; // Null-terminate
@@ -74,5 +78,22 @@ void uart_task(void *arg) {
             }
         }
         vTaskDelay(1000 / portTICK_PERIOD_MS);
+    }
+}
+
+// Use this function to test connection between frontend and backend
+void uart_task_test(void *arg) {
+        ESP_LOGI(UART_TAG, "Starting test mode: Sending fake GPS coordinates...");
+
+    while (1) {
+        // Fake GPS coordinates (Helsinki)
+        float latitude = 60.1699 + ((rand() % 1000) / 100000.0);  // Random small variation
+        float longitude = 24.9384 + ((rand() % 1000) / 100000.0);
+
+        ESP_LOGI(UART_TAG, "Simulated GPS Data - Latitude: %.6f, Longitude: %.6f", latitude, longitude);
+
+        update_gps_data(latitude, longitude);
+
+        vTaskDelay(pdMS_TO_TICKS(2000));
     }
 }

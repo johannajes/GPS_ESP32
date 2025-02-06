@@ -12,15 +12,31 @@
 #define HTTP_TAG "HTTP"
 
 // Global variables for storing GPS data
-static float latitude = 60.1700;
-static float longitude = 24.9390;
+#define MAX_COORDINATES 100  // Storing the last 100 coordinates
+
+static float latitude[MAX_COORDINATES];
+static float longitude[MAX_COORDINATES];
+static int coord_count = 0;
+
 
 
 // Update GPS data from UART
 void update_gps_data(float new_lat, float new_lon) {
-    latitude = new_lat;
-    longitude = new_lon;
-    ESP_LOGI(HTTP_TAG, "Updated GPS: Lat: %.6f, Lon: %.6f", latitude, longitude);
+    if (coord_count < MAX_COORDINATES) {
+        latitude[coord_count] = new_lat;
+        longitude[coord_count] = new_lon;
+        coord_count++;
+    } else {
+        // 🔹 Siirretään vanhat koordinaatit ja lisätään uudet loppuun
+        for (int i = 1; i < MAX_COORDINATES; i++) {
+            latitude[i - 1] = latitude[i];
+            longitude[i - 1] = longitude[i];
+        }
+        latitude[MAX_COORDINATES - 1] = new_lat;
+        longitude[MAX_COORDINATES - 1] = new_lon;
+    }
+
+    ESP_LOGI(HTTP_TAG, "Added GPS: Lat: %.6f, Lon: %.6f (Total: %d)", new_lat, new_lon, coord_count);
 }
 
 esp_err_t cors_options_handler(httpd_req_t *req) {
@@ -33,9 +49,25 @@ esp_err_t cors_options_handler(httpd_req_t *req) {
 
 // GET: Returns GPS coordinates in JSON format
 esp_err_t gps_data_handler(httpd_req_t *req) {
-    char json_response[128];
-    snprintf(json_response, sizeof(json_response),
-             "{\"latitude\": %.6f, \"longitude\": %.6f}", latitude, longitude);
+    char *json_response = (char *)malloc(2048);   // Allocate memory for Buffer
+    if (json_response == NULL) {
+        ESP_LOGE(HTTP_TAG, "Memory allocation failed!");
+        httpd_resp_send_500(req);
+        return ESP_FAIL;
+    }
+
+    char temp[64];
+    strcpy(json_response, "[");  // Make a JSON-table
+
+    for (int i = 0; i < coord_count; i++) {
+        snprintf(temp, sizeof(temp), "{\"latitude\": %.6f, \"longitude\": %.6f}", latitude[i], longitude[i]);
+        strcat(json_response, temp);
+        if (i < coord_count - 1) strcat(json_response, ",");  // Add comma for all except the last row
+    }
+
+    strcat(json_response, "]");  // End JSON-table
+
+    ESP_LOGI(HTTP_TAG, "Sending %d GPS coordinates", coord_count);
 
     // Add CORS headers to allow cross-origin requests (React)
     httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "*");
@@ -44,6 +76,8 @@ esp_err_t gps_data_handler(httpd_req_t *req) {
 
     httpd_resp_set_type(req, "application/json");
     httpd_resp_send(req, json_response, strlen(json_response));
+    
+    free(json_response); // Free allocated memory
     return ESP_OK;
 }
 
@@ -131,7 +165,8 @@ void wifi_init_sta() {
 }
 
 static bool http_server_started = false;
-// Start HTTP-server
+
+// Start task for HTTP-server 
 void start_http_server() {
     if (http_server_started) {
         ESP_LOGW(HTTP_TAG, "Server already running, skipping...");

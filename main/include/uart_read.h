@@ -7,6 +7,7 @@
 #define BUF_SIZE 1024
 
 void uart_task(void *arg);
+void uart_task_test(void *arg);
 void parse_gpgga(const char *nmea_sentence, float *latitude, float *longitude);
 
 #endif
