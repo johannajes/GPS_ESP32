@@ -9,7 +9,7 @@ accessible from devices on the same network.
 
 ### `The project is divided into two repositories:`
 [ESP32 code](https://github.com/johannajes/GPS_ESP32).
-[Map server code](https://github.com/johannajes/Map_App).
+[Map app code](https://github.com/johannajes/Map_App).
 
 ---
 
