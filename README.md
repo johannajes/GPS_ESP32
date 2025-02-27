@@ -9,7 +9,7 @@ accessible from devices on the same network.
 
 ### `The project is divided into two repositories:`
 [ESP32 code](https://github.com/johannajes/GPS_ESP32).
-[Map app code](https://github.com/johannajes/Map_App).
+[Map application code](https://github.com/johannajes/Map_App).
 
 ---
 
@@ -18,7 +18,6 @@ accessible from devices on the same network.
   - Reads GPS data via UART from the NEO-6M module.
   - Parses NMEA sentences to extract latitude and longitude.
   - Hosts an HTTP server to share GPS data in JSON format.
-  - Provides a static IP configuration.
 
 - **React Frontend**:
   - Displays the GPS location on an interactive map using Leaflet.
@@ -110,6 +109,13 @@ accessible from devices on the same network.
 - `axios`
 - `leaflet`
 
+### React dependencies install commands:
+```bash
+npm install react@latest react-dom@latest \
+npm install leaflet react-leaflet \
+npm install web-vitals
+```
+
 ---
 
 ## License
@@ -119,6 +125,7 @@ This project is licensed under the MIT License. See the `LICENSE` file for detai
 
 ## Acknowledgments
 - **ESP-IDF Framework** by Espressif Systems.
+- **React** for building the frontend.
 - **Leaflet** library for interactive maps.
 - **OpenStreetMap** for map tiles.
 
